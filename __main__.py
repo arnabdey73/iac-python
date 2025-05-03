@@ -35,6 +35,7 @@ pulumi.export("primary_storage_key", primary_key)
 aks_cluster = containerservice.ManagedCluster(
     "aksCluster",
     resource_group_name=resource_group.name,
+    location=resource_group.location,
     agent_pool_profiles=[
         containerservice.ManagedClusterAgentPoolProfileArgs(
             name="agentpool",
@@ -44,12 +45,15 @@ aks_cluster = containerservice.ManagedCluster(
             mode="System",
         )
     ],
-    dns_prefix=resource_group.name.apply(lambda name: f"{name}-dns"),
+    dns_prefix="aksdns",
     identity=containerservice.ManagedClusterIdentityArgs(
         type="SystemAssigned"
     ),
-    enable_rbac=True,
+    network_profile=containerservice.ContainerServiceNetworkProfileArgs(
+        network_plugin="azure",
+        network_policy="azure",
+    ),
 )
 
-# Export the AKS cluster name
-pulumi.export("aks_cluster_name", aks_cluster.name)
+# Export the kubeconfig
+pulumi.export("kubeconfig", aks_cluster.kube_config_raw)
